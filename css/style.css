@@ -2,3 +2,16 @@ body {
     text-align: center;
     background-color: #666;
 }
+#messages {
+  margin: 0 auto -2em;
+  z-index: 100;
+  width: 505px;
+  min-height: 2em;
+  background-color: #777;
+}
+code {
+  padding: 0.5em;
+  display: block;
+  text-align: left;
+  color: #eee;
+}

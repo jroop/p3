@@ -24,7 +24,7 @@
 
   };
 
-  String.prototype.log = function(){
+   String.prototype.log = function(level){
     console.log(this);
   };
 
@@ -215,8 +215,21 @@
 
 })();
 
-(function(exports){
+/*
+  little library that returns a Character class
+  passing exports so we can use with server side too ie node.js
+  did a lot of testing hust using the node command line
+*/
+(function(exports){ 
   "use strict";
+
+  //TODO a logger class to help turn on/off commenting
+  var Logger = function(level, element){
+    if (typeof element != 'undefined' && typeof exports.document != 'undefined'){
+      console.log('------------------------------We in the browser');
+    }
+  };
+
   /*
     Charater parent class the cool thing about this class is that it
     sets up the messaging callback system that way any Character class
@@ -230,13 +243,13 @@
       to encapsulate 
     */
     var getId = (function(){
-      var i, _id = '', _idLen = 10;
-      for (i = 0; i < _idLen; i++){ 
+      var i, _id = '', len = 10;
+      for (i = 0; i < len; i++){ 
         _id += Math.round(Math.random()*(9));
       }
       return function(){ 
         return _id;
-      }
+      };
     })();
 
     //these numbers will work for all the non-tile items or characters
@@ -257,12 +270,8 @@
     this.radius = 35; //radius of object detection bubble
     //store the registered objects they can be any kind of object too
     //Store objects for general stuff
-    this.listeners = {}; //array of Character baseclass types
-    //{
-      //'collision':[]
-    //};
+    this.listeners = {}; //array of Characters and their 'on' actions baseclass types
   };
-  //Character.prototype._id = function(){ return _id;};
   /*
     This function is really cool and uses callbacks
     this was a generic way to have all Characters register
@@ -284,10 +293,10 @@
         "not has hasOwnProperty".log();
         this.listeners[_id][type] = [callback]; //no functions yet
       }
-    }else{ //no id found
+    }else{ //no id found so build up a new entry
       "no id found".log();
       this.listeners[_id] = {};
-      this.listeners[_id]['obj'] = obj;
+      this.listeners[_id].obj = obj;
       this.listeners[_id][type] = [callback];
     }
   };
@@ -299,25 +308,25 @@
   */
   Character.prototype.notify = function(type){ //notify object of this message
     var p, i; 
+    /*
+      https://lennybacon.com/post/2011/10/03/chainingasynchronousjavascriptcalls
+      Good example to guide a wrapper function, the example was a bit simpler 
+      as it did not have any parameters but I was able to use the loop
+      structure and wrapper structure.
+    */
+    var wrapper = function(me,func, callback, obj){
+      return function(){
+        func.call(me,callback,obj);
+      };
+    };
 
     for (p in this.listeners){
-      /*
-        https://lennybacon.com/post/2011/10/03/chainingasynchronousjavascriptcalls
-        Good example to guide a wrapper function, the example was a bit simpler 
-        as it did not have any parametersbut was able to use the loop
-        structure and wrapper structure.
-      */
-      var wrapper = function(me,func, callback, obj){
-        return function(){
-          func.call(me,callback,obj);
-        };
-      };
       if (this.listeners.hasOwnProperty(p) && this.listeners[p].hasOwnProperty(type)){
 
         for (i = this.listeners[p][type].length-1; i > -1; i--){
           this.listeners[p][type][i] = wrapper(this,this.listeners[p][type][i],this.listeners[p].obj,this.listeners[p][type][i+1]);
         }
-        this.listeners[p][type][0]();
+        this.listeners[p][type][0](); //invoke the top to start the chain reaction
       }
     }
   };
@@ -327,19 +336,19 @@
   */
   Character.prototype.isCollision = function(obj,type){
     var dx, dy, dist, collided = false;
+    /*
+      swith on alg type 
+      this way we can add more collision algorithms in the future
+    */
+    switch(type){ //if type is undefined go to default
 
-    switch(type){
-
-      case 'circle':
-        //pass to default
-
+      case 'circle': // jshint ignore:line
       default: //circle
         dx = this.x - obj.x;
         dy = this.y - obj.y;
         dist = Math.sqrt(dx*dx + dy*dy);
         //check if collision
         if (dist < this.radius + obj.radius){
-          //this.listeners[type][i].callback.call(obj,this); //invoke offending obj callback
           collided = true;
         }
         break;
@@ -348,8 +357,9 @@
   };
 
   exports.Character = Character;
+  exports.Logger = Logger;
 
-})(typeof exports === 'undefined'? this['Character']={}: exports);
+})(typeof exports === 'undefined'? this.Character={}: exports);
 
 (function(exports){
   "use strict";
@@ -378,6 +388,7 @@
   Player.prototype.kill = function(){ ('Player: '+this.name+' is NOT killing').log(); };
 
 
+  var l = new exports.Logger('CRIT', new Enemy('Joe'));
   var e = new Enemy('Enemy Joe');
   var e2 = new Enemy('Enemy Bill');
   var p = new Player('Player Bob');
@@ -400,14 +411,23 @@
   e.x = 90;
 
   console.log(e.getId());
+
   p.on('collision', function(e,next){
-    console.log("First callback "+e.name+' '+this.name);
+    console.log("First callback "+e.name+' vs '+this.name);
     if(next) next(p);
   },e);
 
   p.on('collision', function(e,next){
-    console.log('Second callback '+e.name+' '+this.name);
+    console.log('Second callback '+e.name+' vs '+this.name);
     if(next) next(e);
+  },e);
+
+  p.on('collision', function(e,next){
+    var hit = p.isCollision(e,'circle');
+    console.log("Checking collision: "+p.name+ " vs "+ e.name + ' = '+hit);
+    if(next && hit){ //check to see if collision if not break chain
+      next(e);
+    }
   },e);
 
   p.on('collision', function(e,next){
@@ -419,56 +439,7 @@
   "------------Start callbacks---------".log();
    p.notify('collision');
    //p.notify('collision');
-   console.log(p);
+   //console.log(p);
 
 
-})(typeof exports === 'undefined'? this['Children']={}: exports);
-
-
-
-function f1(callback) {
-    console.log('f1');
-    if (callback != null) {
-        console.log('hasCallback');
-        callback();
-    }
-}
-function f2(callback) {
-    console.log('f2');
-    if (callback != null) {
-        console.log('hasCallback');
-        callback();
-    }
-}
-function f3(callback) {
-    console.log('f3');
-    if (callback != null) {
-        console.log('hasCallback');
-        callback();
-    }
-}
-
-var devcoach = devcoach || {};
-devcoach.CallChain = function () {
-    var cs = [];
-    this.add = function (call) {
-        cs.push(call);
-    };
-    this.execute = function () {
-        var wrap = function (call, callback) {
-            return function () {
-                call(callback);
-            };
-        };
-        for (var i = cs.length-1; i > -1; i--) {
-            cs[i] = wrap(cs[i], i < cs.length - 1 ? cs[i + 1] : null);
-        }
-        cs[0]();
-    };
-};
-
-var cc = new devcoach.CallChain();
-cc.add(f1);
-cc.add(f2);
-cc.add(f3);
-cc.execute();
+})(typeof exports === 'undefined'? this.Children={}: exports);
