@@ -3,7 +3,7 @@
 /*
   little library that returns a Character class
   passing exports so we can use with server side too ie node.js
-  did a lot of testing hust using the node command line
+  did a lot of testing using the node command line
 */
 (function(exports){ 
   "use strict";
@@ -31,7 +31,7 @@
     sets up the messaging callback system that way any Character class
     or it's subclasses objects can notify each other 
   */
-  var Character = function(name){
+  var Character = function(opts){
 
     /*
       little id generator so we can keep track of objects
@@ -47,24 +47,24 @@
         return _id;
       };
     })();
+    this.getId = getId; //function to get the id
 
-    //these numbers will work for all the non-tile items or characters
-    //_id++;
-    //this._id = Math.random();
-    this.getId = getId;
-    this.name = name;
-    this.x = 0; //default
-    this.y = 0;
-    this.tgto = { //target offset
+    //setting the opts for the Character
+
+    this.name = opts.name || '';
+    this.x = opts.x || 0; //default
+    this.y = opts.y || 0;
+    this.targetOffset = opts.targetOffset || { //target offset
       'x':(16),
       'y':(70-26)
     };
-    this.imgo = { //img offset
+    this.imageOffset = opts.imageOffset || { //img offset
       'x':(0),
       'y':(0-26)
     };
-    this.radius = 35; //radius of object detection bubble
-    //store the registered objects they can be any kind of object too
+    this.radius = opts.radius || 35; //radius of object detection bubble
+    this.sprite = opts.sprite || 'images/char-boy.png';
+
     //Store objects for general stuff
     this.listeners = {}; //array of Characters and their 'on' actions baseclass types
   };
@@ -80,17 +80,13 @@
     var _id = obj.getId(); 
 
     if (this.listeners.hasOwnProperty(_id)){  //id found
-      "id found".log();
       //this.listeners[type].push({'callback': callback, 'obj': obj});
       if (this.listeners[_id].hasOwnProperty(type)){
-        "has hasOwnProperty".log();
         this.listeners[_id][type].push(callback);
       }else{
-        "not has hasOwnProperty".log();
         this.listeners[_id][type] = [callback]; //no functions yet
       }
     }else{ //no id found so build up a new entry
-      "no id found".log();
       this.listeners[_id] = {};
       this.listeners[_id].obj = obj;
       this.listeners[_id][type] = [callback];
@@ -122,6 +118,8 @@
         for (i = this.listeners[p][type].length-1; i > -1; i--){
           this.listeners[p][type][i] = wrapper(this,this.listeners[p][type][i],this.listeners[p].obj,this.listeners[p][type][i+1]);
         }
+        //TODO break this out so no callstack overflow
+        //this should only be when registered
         this.listeners[p][type][0](); //invoke the top to start the chain reaction
       }
     }
@@ -152,19 +150,31 @@
     return collided;
   };
 
+  /*
+    Update method moved here because all characters need to do this
+    just have to ensure that both ctx and Resources are part of the global
+  */
+  Character.prototype.render = function(){
+    exports.ctx.drawImage(exports.Resources.get(this.sprite), this.x, this.y);
+  };
+
+  /*
+    exporting the classes for global use
+  */
   exports.Character = Character;
   exports.Logger = Logger;
 
-})(typeof exports === 'undefined'? this: exports);
+})(typeof exports === 'undefined'? this: exports); //end of library
 
 
 var L = new Logger('messages');
 
-// Enemies our player must avoid
-var Enemy = function() {
-    // Variables applied to each of our instances go here,
-    // we've provided one for you to get started
-
+/*
+  Enemy class that need to avoid
+  subclass of Character
+*/
+var Enemy = function(opts) {
+    Character.call(this,opts);
     // The image/sprite for our enemies, this uses
     // a helper we've provided to easily load images
     this.x = -200;
@@ -172,6 +182,8 @@ var Enemy = function() {
     this.speed = Math.floor((Math.random()*300)+150);
     this.sprite = 'images/enemy-bug.png';
 };
+Enemy.prototype = Object.create(Character.prototype);
+Enemy.prototype.constructor = Enemy;
 
 // Update the enemy's position, required method for game
 // Parameter: dt, a time delta between ticks
@@ -186,43 +198,24 @@ Enemy.prototype.update = function(dt) {
     }
 };
 
-// Draw the enemy on the screen, required method for game
-Enemy.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-};
-
-
-
-
-// Now write your own player class
-// This class requires an update(), render() and
-// a handleInput() method.
-var Player = function(){
-    this.x = 0;
-    this.col = 2;
-
-    this.y = 0;
-    this.row = 5;
-
-    this.sprite = 'images/char-boy.png'; //TODO: make this selectable
-    this.locHelper(0,0);
-
-};
-
-//Player prototypes
-Player.prototype.update = function(){
-
-};
-
-
-Player.prototype.render = function(){
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-};
-
 /*
-    Logic in moving the player
-
+  Player class that moves around trying to avoid enemy class
+  also a subclass of Character
 */
+var Player = function(opts){
+  this.col = 2;
+  this.row = 5;
+  Character.call(this,opts);
+  this.locHelper(0,0);
+
+};
+Player.prototype = Object.create(Character.prototype);
+Player.prototype.constructor = Player;
+
+Player.prototype.update = function(){
+  this.notify('collision');
+};
+
 Player.prototype.handleInput = function(key){
     console.log('Key: '+key);
     switch (key){
@@ -242,11 +235,7 @@ Player.prototype.handleInput = function(key){
             console.log('Player: unknow key press');
     }
 };
-/*
-    Make positioning easier 
-    x = col
-    y = row
-*/
+
 Player.prototype.locHelper = function(col,row){
     //don't allow to move off of board
     col = (this.col + col < 0 || this.col + col >= 5) ? 0 : col;
@@ -272,11 +261,23 @@ Player.prototype.locHelper = function(col,row){
 // Place all enemy objects in an array called allEnemies
 // Place the player object in a variable called player
 var allEnemies = [
-    new Enemy(),
-    new Enemy(),
-    new Enemy(),
+    new Enemy({'sprite':'images/enemy-bug.png'}),
+    new Enemy({'sprite':'images/char-princess-girl.png'}),
+    new Enemy({'sprite':'images/char-cat-girl.png'}),
 ];
-var player = new Player();
+var player = new Player({'name':'Crap'});
+
+for (var i = 0; i < allEnemies.length; i++){
+  player.on('collision', function(e,next){
+    var hit = this.isCollision(e,'circle');
+    if(hit){ //reset the player
+      L.log('hit');
+      this.row = 5;
+      this.col = 2;
+      this.locHelper(0,0);
+    }
+  },allEnemies[i]);
+}
 
 L.log('hello');
 
@@ -291,6 +292,5 @@ document.addEventListener('keyup', function(e) {
         39: 'right',
         40: 'down'
     };
-
     player.handleInput(allowedKeys[e.keyCode]);
 });
