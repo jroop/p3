@@ -77,7 +77,7 @@
     function, that way I could keep it generic.
   */
   Character.prototype.on = function(type, callback, obj){ 
-    var _id = obj.getId(); 
+    var p, i, _id = obj.getId(); 
 
     if (this.listeners.hasOwnProperty(_id)){  //id found
       //this.listeners[type].push({'callback': callback, 'obj': obj});
@@ -91,15 +91,7 @@
       this.listeners[_id].obj = obj;
       this.listeners[_id][type] = [callback];
     }
-  };
-  /*
-    This function is also cool and basically is the mirror of the 
-    'on' function. This is where we invoke the callbacks and use 'call'
-    so that if we want to use 'this' we can it is a form of callback 
-    chaining so it decouples the class a bit more for flexiblilty
-  */
-  Character.prototype.notify = function(type){ //notify object of this message
-    var p, i; 
+
     /*
       https://lennybacon.com/post/2011/10/03/chainingasynchronousjavascriptcalls
       Good example to guide a wrapper function, the example was a bit simpler 
@@ -111,18 +103,31 @@
         func.call(me,callback,obj);
       };
     };
-
+    //now loop through and create the callback chain
     for (p in this.listeners){
       if (this.listeners.hasOwnProperty(p) && this.listeners[p].hasOwnProperty(type)){
 
         for (i = this.listeners[p][type].length-1; i > -1; i--){
           this.listeners[p][type][i] = wrapper(this,this.listeners[p][type][i],this.listeners[p].obj,this.listeners[p][type][i+1]);
         }
-        //TODO break this out so no callstack overflow
-        //this should only be when registered
-        this.listeners[p][type][0](); //invoke the top to start the chain reaction
       }
     }
+  };
+  /*
+    This function is also cool and basically is the mirror of the 
+    'on' function. This is where we invoke the callbacks and use 'call'
+    so that if we want to use 'this' we can it is a form of callback 
+    chaining so it decouples the class a bit more for flexiblilty
+  */
+  Character.prototype.notify = function(type){ //notify object of this message
+    var p, i;
+
+    for (p in this.listeners){
+      if (this.listeners.hasOwnProperty(p) && this.listeners[p].hasOwnProperty(type)){
+        //invoke the top to start the chain of callbacks
+        this.listeners[p][type][0](); 
+      }
+    }    
   };
   /*
     Simple circle collision detection
@@ -245,11 +250,8 @@ Player.prototype.locHelper = function(col,row){
         this.col = 2;
     }
     row = (this.row + row >= 6) ? 0 : row;
-    console.log('drow: ' + row + ' dcol: ' + col);
-
     this.col += col;
     this.row += row;
-    console.log('row: ' + this.row + ' col: ' + this.col);
 
     this.x = this.col * 101;
     this.y = this.row * 83 - 26;
