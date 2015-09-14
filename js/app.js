@@ -1,42 +1,29 @@
-
-
-
+/*
+  For the parent class see Character.js
+*/
 
 //TODO a logger class to help turn on/off commenting
 var Logger = function(id){
-  if (typeof id != 'undefined' && typeof document != 'undefined'){
-    console.log('------------------------------We in the browser');
-    this.element = document.getElementById(id);
-  }
+  this.element = document.getElementById(id);
 };
-Logger.prototype.log = function(msg){
-  if (typeof this.element != 'undefined'){
-    this.element.innerHTML = '<code>>'+msg+'</code>';
-  }else{
-    console.log(msg);
-  }
+Logger.prototype.log = function(msg){ 
+  this.element.innerHTML = '<code>>'+msg+'</code>';
 };
-
-var L = new Logger('messages');
 
 /*
   Enemy class that need to avoid
-  subclass of Character
+  inherits from Character class
 */
 var Enemy = function(opts) {
     Character.call(this,opts);
-    // The image/sprite for our enemies, this uses
-    // a helper we've provided to easily load images
-    this.x = -200;
+    this.x = -200; //start enemy off of screen
     this.y = 1*83-26;
-    this.speed = Math.floor((Math.random()*300)+150);
-    this.sprite = 'images/enemy-bug.png';
+    //randomly set speed
+    this.speed = Math.floor((Math.random()*100)+10);
+    this.sprite = opts.sprite || 'images/dot-red.png';
 };
 Enemy.prototype = Object.create(Character.prototype);
 Enemy.prototype.constructor = Enemy;
-
-// Update the enemy's position, required method for game
-// Parameter: dt, a time delta between ticks
 Enemy.prototype.update = function(dt) {
     // You should multiply any movement by the dt parameter
     // which will ensure the game runs at the same speed for
@@ -44,24 +31,24 @@ Enemy.prototype.update = function(dt) {
     this.x = this.x+this.speed*dt;
     if (this.x > 600){
         this.x = -200;
-        this.y = Math.floor((Math.random()*3)+1)*83-26;
+        this.y = Math.floor((Math.random()*3)+1)*83-26; //set new row
     }
 };
 
 /*
   Player class that moves around trying to avoid enemy class
-  also a subclass of Character
+  inherits form Character class
 */
 var Player = function(opts){
-  this.col = 2;
-  this.row = 5;
   Character.call(this,opts);
-  this.locHelper(0,0);
-
+  this.col = opts.col || 2; //the x value on the grid
+  this.row = opts.row || 5; //the y value on the grid
+  this.locHelper(0,0); //set initial position
+  //use dots to help with collision detection debugging
+  this.sprite = opts.sprite || 'images/dot-blue.png';
 };
 Player.prototype = Object.create(Character.prototype);
 Player.prototype.constructor = Player;
-
 Player.prototype.update = function(){
   this.notify('collision');
 };
@@ -100,31 +87,107 @@ Player.prototype.locHelper = function(col,row){
 
     this.x = this.col * 101;
     this.y = this.row * 83 - 26;
-    L.log(this.x);
+    L.log(this.x + ' ' + this.y);
 };
+
+/*
+  Class for display of lives
+  inherits Character class but will override some methods
+*/
+var Life = function(opts){
+  this.opts = opts || {}; //incase we didn't pass anything to the object on new
+  Character.call(this,opts);
+  this.sprite = opts.sprite || 'images/Heart.png';
+  this.scale = opts.scale || 0.25;
+  this.lives = opts.lives || 3;
+};
+Life.prototype = Object.create(Character.prototype);
+Life.prototype.constructor = Life;
+//restart the lives count
+Life.prototype.init = function(){
+  this.imgObj = Resources.get(this.sprite); //set up reusable img
+  this.lives = this.opts.lives;
+};
+Life.prototype.render = function(){ //draw the lives or hearts
+  for (var i = 0; i < this.lives; i++){
+    ctx.drawImage(this.imgObj, this.x+i*this.imgObj.width*this.scale, this.y, this.imgObj.width*this.scale, this.imgObj.height*this.scale);
+  }
+  if (this.lives == 0){
+    this.notify('dead');
+  }
+};
+
+
 
 
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
 // Place the player object in a variable called player
+
+
+/*
+  Create the objects
+*/
+
+var L = new Logger('messages'); //pass in the element to write to
+
+var life = new Life({
+  'x': 10,
+  'y': 540,
+  'lives': 6
+});
+
 var allEnemies = [
     new Enemy({'sprite':'images/enemy-bug.png'}),
     new Enemy({'sprite':'images/char-princess-girl.png'}),
     new Enemy({'sprite':'images/char-cat-girl.png'}),
 ];
-var player = new Player({'name':'Crap'});
 
+var player = new Player({
+  'name':'Player',
+  'sprite': 'images/char-boy.png'
+});
+
+/*
+  Now link the objects together through callbacks of on and notify
+  this is where the game behavior is linked together
+  done this way so we can add and remove behaviors easily without
+  disturbing base objects
+*/
+
+//when player notifies on collission tell all enemies to do something
 for (var i = 0; i < allEnemies.length; i++){
   player.on('collision', function(e,next){
     var hit = this.isCollision(e,'circle');
-    if(hit){ //reset the player
+    if (hit){ 
       L.log('hit');
-      this.row = 5;
-      this.col = 2;
-      this.locHelper(0,0);
+      player.notify('hit');
     }
-  },allEnemies[i]);
+  },allEnemies[i]); //pass in the enemy to the collision register
 }
+
+//when player notifies a hit remove a life
+player.on('hit', function(obj,next){
+  obj.lives -= 1; //minus a life
+  if (next){
+    next();
+  }
+},life); //life 
+
+//when player notifies a hit make the player reset itself
+player.on('hit', function(obj,next){
+  obj.row = 5; 
+  obj.col = 2;
+  this.locHelper(0,0);
+  if (next){
+    next();
+  }
+},player); //self 
+
+life.on('dead', function(obj, next){
+  obj.init();
+},life);
+
 
 L.log('hello');
 

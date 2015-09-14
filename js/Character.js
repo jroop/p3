@@ -12,6 +12,7 @@
   */
   var Character = function(opts){
 
+   
     /*
       little id generator so we can keep track of objects
       and no one can modify the internal id using a closure 
@@ -31,6 +32,7 @@
     //setting the opts for the Character
 
     this.name = opts.name || '';
+    this.points = opts.points || 0; //each item holds points
     this.x = opts.x || 0; //default
     this.y = opts.y || 0;
     this.targetOffset = opts.targetOffset || { //target offset
@@ -110,7 +112,6 @@
   };
   /*
     Simple circle collision detection
-    TODO work this function into the mix
   */
   Character.prototype.isCollision = function(obj,type){
     var dx, dy, dist, collided = false;
