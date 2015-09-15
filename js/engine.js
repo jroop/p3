@@ -95,6 +95,7 @@ var Engine = (function(global) {
             enemy.update(dt);
         });
         player.update();
+        gamestate.update(dt);
     }
 
     /* This function initially draws the "game level", it will then call
@@ -153,7 +154,7 @@ var Engine = (function(global) {
         });
 
         player.render();
-        life.render();
+        gamestate.render();
     }
 
     /* This function does nothing but it could have been a good place to
@@ -164,7 +165,7 @@ var Engine = (function(global) {
         // noop
         //draw grey screen 
         //TODO press enter to start
-        life.init();
+        gamestate.init();
     }
 
     /* Go ahead and load all of the images we know we're going to need to
@@ -176,11 +177,17 @@ var Engine = (function(global) {
         'images/water-block.png',
         'images/grass-block.png',
         'images/enemy-bug.png',
+        'images/enemy-bug-back.png',
         'images/char-boy.png',
+        'images/char-boy-back.png',
         'images/char-cat-girl.png',
         'images/char-horn-girl.png',
         'images/char-princess-girl.png',
         'images/Heart.png',
+        'images/gem-blue.png',
+        'images/gem-orange.png',
+        'images/gem-orange-back.png',
+        'images/gem-green.png',
         //these are for collision testing
         'images/dot-blue.png', 
         'images/dot-red.png'

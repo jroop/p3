@@ -45,6 +45,7 @@
     };
     this.radius = opts.radius || 35; //radius of object detection bubble
     this.sprite = opts.sprite || 'images/char-boy.png';
+    this.scale = opts.scale || 1.0; //don't scale
 
     //Store objects for general stuff
     this.listeners = {}; //array of Characters and their 'on' actions baseclass types
@@ -140,7 +141,9 @@
     just have to ensure that both ctx and Resources are part of the global
   */
   Character.prototype.render = function(){
-    exports.ctx.drawImage(exports.Resources.get(this.sprite), this.x, this.y);
+    var imgObj = exports.Resources.get(this.sprite); //could be more efficient with a init funct
+    //exports.ctx.drawImage(exports.Resources.get(this.sprite), this.x, this.y);
+    exports.ctx.drawImage(imgObj, this.x, this.y, imgObj.width*this.scale, imgObj.height*this.scale);
   };
 
   /*
