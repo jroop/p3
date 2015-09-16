@@ -25,13 +25,13 @@ var Enemy = function(opts) {
 Enemy.prototype = Object.create(Character.prototype);
 Enemy.prototype.constructor = Enemy;
 Enemy.prototype.update = function(dt) {
-    // You should multiply any movement by the dt parameter
-    // which will ensure the game runs at the same speed for
-    // all computers.
-    this.x = this.x + this.speed*dt;
-    if (this.x > 600){
-        this.x = -200;
-        this.y = Math.floor((Math.random()*3)+1)*83-26; //set new row
+
+    if (!this.paused){
+      this.x = this.x + this.speed*dt;
+      if (this.x > 600){
+          this.x = -200;
+          this.y = Math.floor((Math.random()*3)+1)*83-26; //set new row
+      }
     }
 };
 
@@ -45,18 +45,18 @@ var Gem = function(opts) {
     this.y = 1*83-26;
     //randomly set speed
     this.speed = Math.floor((Math.random()*100)+90);
-    this.sprite = opts.sprite || 'images/dot-red.png';
+    this.sprite = opts.sprite || 'images/dot-blue.png';
 };
 Gem.prototype = Object.create(Character.prototype);
 Gem.prototype.constructor = Gem;
 Gem.prototype.update = function(dt) {
-    // You should multiply any movement by the dt parameter
-    // which will ensure the game runs at the same speed for
-    // all computers.
-    this.x = this.x + this.speed*dt;
-    if (this.x > 600){
-        this.x = -200;
-        this.y = Math.floor((Math.random()*3)+1)*83*(1.0-this.scale+1.0)-26; //set new row
+
+    if (!this.paused){
+      this.x = this.x + this.speed*dt;
+      if (this.x > 600){
+          this.x = -200;
+          this.y = Math.floor((Math.random()*3)+1)*83-26; //set new row
+      }
     }
 };
 
@@ -71,11 +71,13 @@ var Player = function(opts){
   this.locHelper(0,0); //set initial position
   //use dots to help with collision detection debugging
   this.sprite = opts.sprite || 'images/dot-blue.png';
+  this.x = this.col * 101;
+  this.y = this.row * 83 - 26;
 };
 Player.prototype = Object.create(Character.prototype);
 Player.prototype.constructor = Player;
 Player.prototype.update = function(){
-  this.notify('collision'); //tell all listeners to check for collision
+  this.notify('check_collision'); //tell all listeners to check for collision
 };
 
 Player.prototype.handleInput = function(key){
@@ -92,6 +94,14 @@ Player.prototype.handleInput = function(key){
         case 'down':
             this.locHelper(0,1);
             break;
+        case 'enter':
+            if (!this.paused){
+              this.paused = true;
+            }else{
+              this.paused = false;
+            }
+            this.notify('paused');
+            break;
         default:
             console.log('Player: unknow key press');
     }
@@ -99,44 +109,22 @@ Player.prototype.handleInput = function(key){
 
 Player.prototype.locHelper = function(col,row){
     //don't allow to move off of board
-    col = (this.col + col < 0 || this.col + col >= 5) ? 0 : col;
-    if (this.row + row < 1 ){
-        row = 4; //got to the water
-        col = 0; //center the player back up
-        this.col = 2;
-        this.notify('goal'); //tell all the listeners that this player got to goal
+
+    if (!this.paused){
+      col = (this.col + col < 0 || this.col + col >= 5) ? 0 : col;
+      if (this.row + row < 1 ){
+          row = 4; //got to the water
+          col = 0; //center the player back up
+          this.col = 2;
+          this.notify('goal'); //tell all the listeners that this player got to goal
+      }
+      row = (this.row + row >= 6) ? 0 : row;
+      this.col += col;
+      this.row += row;
+
+      this.x = this.col * 101;
+      this.y = this.row * 83 - 26;
     }
-    row = (this.row + row >= 6) ? 0 : row;
-    this.col += col;
-    this.row += row;
-
-    this.x = this.col * 101;
-    this.y = this.row * 83 - 26;
-};
-
-/*
-  Class for display of lives
-  inherits Character class but will override some methods
-*/
-var Life = function(opts){
-  this.opts = opts || {}; //incase we didn't pass anything to the object on new
-  Character.call(this,opts);
-  this.sprite = opts.sprite || 'images/Heart.png';
-  this.scale = opts.scale || 0.25;
-  this.lives = opts.lives || 3;
-};
-Life.prototype = Object.create(Character.prototype);
-Life.prototype.constructor = Life;
-//restart the lives count
-Life.prototype.init = function(){
-  this.imgObj = Resources.get(this.sprite); //set up reusable img
-  this.lives = this.opts.lives;
-};
-Life.prototype.render = function(){ //draw the lives or hearts
-  for (var i = 0; i < this.lives; i++){
-    ctx.drawImage(this.imgObj, this.x+i*this.imgObj.width*this.scale, this.y, this.imgObj.width*this.scale, this.imgObj.height*this.scale);
-  }
-  
 };
 
 /*
@@ -167,13 +155,15 @@ GameState.prototype.init = function(){ //reset parameters
   this.score = this.opts.score;
 };
 GameState.prototype.update = function(dt){
-  this.time -= dt;
   //notify of gameover
-  if (this.lives == 0 || this.time <= 0.0){
-    if (this.score > this.high_score){
-      this.high_score = this.score;
+  if (!this.paused){
+    this.time -= dt;
+    if (this.lives == 0 || this.time <= 0.0){
+      if (this.score > this.high_score){
+        this.high_score = this.score;
+      }
+      this.notify('gameover'); //tell all listeners that gameover
     }
-    this.notify('gameover'); //tell all listeners that gameover
   }
 };
 GameState.prototype.render = function(){ //draw the score board
@@ -193,11 +183,25 @@ GameState.prototype.render = function(){ //draw the score board
 
   //timer portion
   ctx.save(); //save the contex so we do not cascade any effects
-  ctx.fillStyle = '#cc0';
+  ctx.fillStyle = '#ffcc80';
   ctx.font = 'bold 28px Sans';
   ctx.textAlign = 'end';
   ctx.fillText(this.score, 500, 80);
   ctx.restore(); //restore
+
+  if (this.paused){
+    ctx.save(); //save the contex so we do not cascade any effects
+    ctx.lineWidth = 4;
+    ctx.fillStyle = '#ffcc80';
+    ctx.strokeStyle = '#995c00';
+    ctx.font = 'bold 35px Sans';
+    ctx.textAlign = 'center';
+    ctx.strokeText('Enter to Start', ctx.canvas.width/2, ctx.canvas.height/2-40);
+    ctx.fillText('Enter to Start', ctx.canvas.width/2, ctx.canvas.height/2-40);
+    
+    ctx.restore(); //restore
+  }
+
 };
 
 
@@ -220,15 +224,20 @@ var gamestate = new GameState({
 });
 
 var allEnemies = [
-  new Gem({'sprite':'images/gem-orange-back.png', 'scale': 0.5}),
-  new Enemy({'sprite':'images/enemy-bug-back.png'}),
-  new Enemy({'sprite':'images/enemy-bug-back.png'}),
-  new Enemy({'sprite':'images/enemy-bug-back.png'})
+  new Enemy({'sprite':'images/enemy-bug.png', 'scale': 1.0, 'points': -100}),
+  new Enemy({'sprite':'images/enemy-bug.png', 'scale': 1.0, 'points': -100}),
+  new Enemy({'sprite':'images/enemy-bug.png', 'scale': 1.0, 'points': -100}),
+  new Enemy({'sprite':'images/enemy-bug.png', 'scale': 1.0, 'points': -100}),
+  new Gem({'sprite':'images/gem-blue.png', 'scale': 1.0, 'points': 10}),
+  new Gem({'sprite':'images/gem-green.png', 'scale': 1.0, 'points': 20}),
+  new Gem({'sprite':'images/gem-orange.png', 'scale': 1.0, 'points': 30})
 ];
 
 var player = new Player({
   'name':'Player',
-  'sprite': 'images/char-boy-back.png'
+  'sprite': 'images/char-boy.png',
+  'scale': 1.0,
+  'points': 20 //points for reaching goal
 });
 
 /*
@@ -240,36 +249,60 @@ var player = new Player({
 
 //when player notifies on collission tell all enemies to do something
 for (var i = 0; i < allEnemies.length; i++){
-  player.on('collision', function(obj,next){
+  player.on('check_collision', function(obj,next){
     var hit = this.isCollision(obj,'circle');
     if (hit){
-      console.log(obj);
-      player.notify('hit');
+      this.score += obj.points; //do points transfer
+      if (obj instanceof Gem){
+        obj.x = 600;
+        this.notify('gem');
+      }else{
+        this.notify('hit');
+      }
     }
-  },allEnemies[i]);
+  }, allEnemies[i]);
+
+  //so player state is propagated
+  player.on('paused', function(obj, next){
+    obj.paused = this.paused;
+  }, allEnemies[i]);
 }
 
 //when player notifies a hit remove a life
 player.on('hit', function(obj,next){
+  this.row = 5; 
+  this.col = 2;
+  this.locHelper(0,0);
   obj.lives -= 1; //minus a life
-  obj.score -= 500;
+  obj.score = this.score;
+
   if (next) next(); //shorthand if statement since only one statement
 }, gamestate);
 
-//when player reaches water update the score
-player.on('goal', function(obj,next){
-  obj.score += 100;
+//update the score when player captures a gem
+player.on('gem', function(obj, next){
+  obj.score = this.score;
   if (next) next();
 }, gamestate);
 
 
-//when player hit make the player reset itself
-player.on('hit', function(obj,next){
+//when player reaches water update the score
+player.on('goal', function(obj,next){
+  this.score += this.points; //reached the goal
+  obj.score = this.score; //set the score board same as player points
+  if (next) next();
+}, gamestate);
+
+//on game over reset the player points
+gamestate.on('gameover', function(obj, next){
+  obj.score = 0;
   obj.row = 5; 
   obj.col = 2;
-  this.locHelper(0,0);
+  obj.locHelper(0,0);
+  obj.paused = true;
+  obj.notify('paused');
   if (next) next();
-}, player); //self 
+}, player);
 
 //when run out of lives restart myself
 gamestate.on('gameover', function(obj, next){
@@ -281,6 +314,16 @@ gamestate.on('gameover', function(obj, next){
   //call init game function
   if (next) next();
 }, gamestate);
+
+//keep track of keys for enter
+player.on('paused', function(obj, next){
+  obj.paused = this.paused;
+  if (next) next();
+}, gamestate);
+
+
+
+
 
 
 
@@ -295,7 +338,8 @@ document.addEventListener('keyup', function(e) {
         37: 'left',
         38: 'up',
         39: 'right',
-        40: 'down'
+        40: 'down',
+        13: 'enter'
     };
     player.handleInput(allowedKeys[e.keyCode]);
 });

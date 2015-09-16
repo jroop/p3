@@ -46,6 +46,9 @@
     this.radius = opts.radius || 35; //radius of object detection bubble
     this.sprite = opts.sprite || 'images/char-boy.png';
     this.scale = opts.scale || 1.0; //don't scale
+    this.points = opts.points || 0;
+    this.score = opts.score || 0;
+    this.paused = true; //for start and stop and reset play
 
     //Store objects for general stuff
     this.listeners = {}; //array of Characters and their 'on' actions baseclass types
