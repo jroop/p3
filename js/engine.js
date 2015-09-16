@@ -138,7 +138,7 @@ var Engine = (function(global) {
         }
 
         if (gamestate.paused){
-            //added this cool feature to gray out background during rest and pause 
+            //added this cool feature to gray out background during rest and pause
             //but called before rendering characters
             try {
                 var img = ctx.getImageData(0,0, ctx.canvas.width, ctx.canvas.height);
@@ -151,8 +151,8 @@ var Engine = (function(global) {
     }
 
     /*
-        Add on functionality to make canvas gray 
-        Developed during the Udacity projects of the Canvas class 
+        Add on functionality to make canvas gray
+        Developed during the Udacity projects of the Canvas class
     */
     ImageData.prototype.grayscale = function(){
         var i, r, g, b, ave;
@@ -165,12 +165,12 @@ var Engine = (function(global) {
 
             ave = (r+g+b)/3;
             ave -= 70; //darken image a bit
-            this.data[i*4+0] = ave; 
-            this.data[i*4+1] = ave; 
-            this.data[i*4+2] = ave; 
+            this.data[i*4+0] = ave;
+            this.data[i*4+1] = ave;
+            this.data[i*4+2] = ave;
         }
         return this;
-      };
+    };
 
     /* This function is called by the render function and is called on each game
      * tick. It's purpose is to then call the render functions you have defined
@@ -193,7 +193,7 @@ var Engine = (function(global) {
      */
     function reset() {
         // noop
-        //draw grey screen 
+        //draw grey screen
         gamestate.init();
     }
 
@@ -218,7 +218,7 @@ var Engine = (function(global) {
         'images/gem-orange-back.png',
         'images/gem-green.png',
         //these are for collision testing
-        'images/dot-blue.png', 
+        'images/dot-blue.png',
         'images/dot-red.png'
     ]);
     Resources.onReady(init);

@@ -3,27 +3,27 @@
   passing exports so we can use with server side too ie node.js
   did a lot of testing using the node command line
 */
-(function(exports){ 
+(function(exports){
   "use strict";
   /*
     Charater parent class the cool thing about this class is that it
     sets up the messaging callback system that way any Character class
-    or it's subclasses objects can notify each other 
+    or it's subclasses objects can notify each other
   */
   var Character = function(opts){
 
-   
+
     /*
       little id generator so we can keep track of objects
-      and no one can modify the internal id using a closure 
-      to encapsulate 
+      and no one can modify the internal id using a closure
+      to encapsulate
     */
     var getId = (function(){
       var i, _id = '', len = 10;
-      for (i = 0; i < len; i++){ 
+      for (i = 0; i < len; i++){
         _id += Math.round(Math.random()*(9));
       }
-      return function(){ 
+      return function(){
         return _id;
       };
     })();
@@ -56,13 +56,13 @@
   /*
     This function is really cool and uses callbacks
     this was a generic way to have all Characters register
-    other objects so that they could 'notify' them of some sort of 
-    action and invoke the provided callback. NOTE you only need to 
+    other objects so that they could 'notify' them of some sort of
+    action and invoke the provided callback. NOTE you only need to
     provide the 'obj' parameter if you are using this in your callback
     function, that way I could keep it generic.
   */
-  Character.prototype.on = function(type, callback, obj){ 
-    var p, i, _id = obj.getId(); 
+  Character.prototype.on = function(type, callback, obj){
+    var p, i, _id = obj.getId();
 
     if (this.listeners.hasOwnProperty(_id)){  //id found
       //this.listeners[type].push({'callback': callback, 'obj': obj});
@@ -79,7 +79,7 @@
 
     /*
       https://lennybacon.com/post/2011/10/03/chainingasynchronousjavascriptcalls
-      Good example to guide a wrapper function, the example was a bit simpler 
+      Good example to guide a wrapper function, the example was a bit simpler
       as it did not have any parameters but I was able to use the loop
       structure and wrapper structure.
     */
@@ -99,9 +99,9 @@
     }
   };
   /*
-    This function is also cool and basically is the mirror of the 
+    This function is also cool and basically is the mirror of the
     'on' function. This is where we invoke the callbacks and use 'call'
-    so that if we want to use 'this' we can it is a form of callback 
+    so that if we want to use 'this' we can it is a form of callback
     chaining so it decouples the class a bit more for flexiblilty
   */
   Character.prototype.notify = function(type){ //notify object of this message
@@ -110,9 +110,9 @@
     for (p in this.listeners){
       if (this.listeners.hasOwnProperty(p) && this.listeners[p].hasOwnProperty(type)){
         //invoke the top to start the chain of callbacks
-        this.listeners[p][type][0](); 
+        this.listeners[p][type][0]();
       }
-    }    
+    }
   };
   /*
     Simple circle collision detection
@@ -120,7 +120,7 @@
   Character.prototype.isCollision = function(obj,type){
     var dx, dy, dist, collided = false;
     /*
-      swith on alg type 
+      swith on alg type
       this way we can add more collision algorithms in the future
     */
     switch(type){ //if type is undefined go to default
@@ -144,7 +144,7 @@
     just have to ensure that both ctx and Resources are part of the global
   */
   Character.prototype.render = function(){
-    var imgObj = exports.Resources.get(this.sprite); 
+    var imgObj = exports.Resources.get(this.sprite);
     exports.ctx.drawImage(imgObj, this.x, this.y, imgObj.width*this.scale, imgObj.height*this.scale);
   };
 

@@ -8,7 +8,7 @@
 var Logger = function(id){
   this.element = document.getElementById(id);
 };
-Logger.prototype.log = function(msg){ 
+Logger.prototype.log = function(msg){
   this.element.innerHTML = '<code>'+msg+'</code>';
 };
 
@@ -40,7 +40,7 @@ Enemy.prototype.update = function(dt) {
 /*
   Gem class that need to catch
   inherits from Character class simlar to the enemy class
-  if wanted to could roll into one but it was nice to use instanceof 
+  if wanted to could roll into one but it was nice to use instanceof
   for detection of objects and decisions
 */
 var Gem = function(opts) {
@@ -99,11 +99,7 @@ Player.prototype.handleInput = function(key){
             this.locHelper(0,1);
             break;
         case 'enter':
-            if (!this.paused){
-              this.paused = true;
-            }else{
-              this.paused = false;
-            }
+            this.paused = !this.paused ? true : false;
             this.notify('paused');
             break;
         default:
@@ -163,15 +159,15 @@ var GameState = function(opts){
   this.scale = opts.scale || 0.25; //scaling factor to resize the hearts
   this.lives = opts.lives || 3;
 
-  //save the states 
-  this.opts.time = this.time; 
+  //save the states
+  this.opts.time = this.time;
   this.opts.score = this.score;
   this.opts.lives = this.lives;
   this.high_score = 0; //keep this persistent until a browser refresh
 };
 GameState.prototype = Object.create(Character.prototype);
 GameState.prototype.constructor = GameState;
-GameState.prototype.init = function(){ //reset parameters 
+GameState.prototype.init = function(){ //reset parameters
   this.imgObj = Resources.get(this.sprite); //set up reusable img
   this.lives = this.opts.lives;
   this.time = this.opts.time;
@@ -221,7 +217,7 @@ GameState.prototype.render = function(){ //draw the score board
     ctx.textAlign = 'center';
     ctx.strokeText('Enter to Start', ctx.canvas.width/2, ctx.canvas.height/2-40);
     ctx.fillText('Enter to Start', ctx.canvas.width/2, ctx.canvas.height/2-40);
-    
+
     ctx.restore(); //restore
   }
 
@@ -249,13 +245,41 @@ var gamestate = new GameState({
 //add more and modify points if you want to
 //didn't use the scale feature but can be used to modify size of image
 var allEnemies = [
-  new Enemy({'sprite':'images/enemy-bug.png', 'scale': 1.0, 'points': -100}),
-  new Enemy({'sprite':'images/enemy-bug.png', 'scale': 1.0, 'points': -100}),
-  new Enemy({'sprite':'images/enemy-bug.png', 'scale': 1.0, 'points': -100}),
-  new Enemy({'sprite':'images/enemy-bug.png', 'scale': 1.0, 'points': -100}),
-  new Gem({'sprite':'images/gem-blue.png', 'scale': 1.0, 'points': 10}),
-  new Gem({'sprite':'images/gem-green.png', 'scale': 1.0, 'points': 20}),
-  new Gem({'sprite':'images/gem-orange.png', 'scale': 1.0, 'points': 30})
+  new Enemy({
+    'sprite':'images/enemy-bug.png',
+    'scale': 1.0,
+    'points': -100
+  }),
+  new Enemy({
+    'sprite':'images/enemy-bug.png',
+    'scale': 1.0,
+    'points': -100
+  }),
+  new Enemy({
+    'sprite':'images/enemy-bug.png',
+    'scale': 1.0,
+    'points': -100
+  }),
+  new Enemy({
+    'sprite':'images/enemy-bug.png',
+    'scale': 1.0,
+    'points': -100
+  }),
+  new Gem({
+    'sprite':'images/gem-blue.png',
+    'scale': 1.0,
+    'points': 10
+  }),
+  new Gem({
+    'sprite':'images/gem-green.png',
+    'scale': 1.0,
+    'points': 20
+  }),
+  new Gem({
+    'sprite':'images/gem-orange.png',
+    'scale': 1.0,
+    'points': 30
+  })
 ];
 
 var player = new Player({
@@ -287,7 +311,7 @@ for (var i = 0; i < allEnemies.length; i++){
 
 //when player notifies a hit remove a life
 player.on('hit', function(obj,next){
-  this.row = 5; 
+  this.row = 5;
   this.col = 2;
   this.locHelper(0,0);
   obj.lives -= 1; //minus a life
@@ -324,7 +348,7 @@ player.on('goal', function(obj,next){
 //on game over reset the player points
 gamestate.on('gameover', function(obj, next){
   obj.score = 0;
-  obj.row = 5; 
+  obj.row = 5;
   obj.col = 2;
   obj.locHelper(0,0);
   obj.paused = true;
