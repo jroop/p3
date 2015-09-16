@@ -144,8 +144,7 @@
     just have to ensure that both ctx and Resources are part of the global
   */
   Character.prototype.render = function(){
-    var imgObj = exports.Resources.get(this.sprite); //could be more efficient with a init funct
-    //exports.ctx.drawImage(exports.Resources.get(this.sprite), this.x, this.y);
+    var imgObj = exports.Resources.get(this.sprite); 
     exports.ctx.drawImage(imgObj, this.x, this.y, imgObj.width*this.scale, imgObj.height*this.scale);
   };
 

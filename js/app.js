@@ -2,7 +2,9 @@
   For the parent class see Character.js
 */
 
-//TODO a logger class to help turn on/off commenting
+/*
+  A simple logger class to help commenting, scores, etc
+*/
 var Logger = function(id){
   this.element = document.getElementById(id);
 };
@@ -19,7 +21,7 @@ var Enemy = function(opts) {
     this.x = -200; //start enemy off of screen
     this.y = 1*83-26;
     //randomly set speed
-    this.speed = Math.floor((Math.random()*100)+10);
+    this.speed = Math.floor((Math.random()*100)+50);
     this.sprite = opts.sprite || 'images/dot-red.png';
 };
 Enemy.prototype = Object.create(Character.prototype);
@@ -37,7 +39,9 @@ Enemy.prototype.update = function(dt) {
 
 /*
   Gem class that need to catch
-  inherits from Character class
+  inherits from Character class simlar to the enemy class
+  if wanted to could roll into one but it was nice to use instanceof 
+  for detection of objects and decisions
 */
 var Gem = function(opts) {
     Character.call(this,opts);
@@ -107,6 +111,7 @@ Player.prototype.handleInput = function(key){
     }
 };
 
+//function to help figure out the location of the player on the board
 Player.prototype.locHelper = function(col,row){
     //don't allow to move off of board
 
@@ -126,9 +131,27 @@ Player.prototype.locHelper = function(col,row){
       this.y = this.row * 83 - 26;
     }
 };
+//created so we don't make functions in a loop
+Player.prototype.handleCollision = function(obj,next){
+  var hit = this.isCollision(obj,'circle');
+  if (hit){
+    this.score += obj.points; //do points transfer
+    if (obj instanceof Gem){ //cool this is how we can tell if enemy or not
+      obj.x = 600; //move the gem back to the start
+      this.notify('gem');
+    }else{
+      this.notify('hit');
+    }
+  }
+};
+Player.prototype.handlePaused = function(obj,next){
+  obj.paused = this.paused;
+};
+
 
 /*
   Class to keep track of the overall gamestate
+  for things such as time, scores, high_scores etc
   inherits Character class so we can utilize on and notify
 */
 var GameState = function(opts){
@@ -158,7 +181,7 @@ GameState.prototype.update = function(dt){
   //notify of gameover
   if (!this.paused){
     this.time -= dt;
-    if (this.lives == 0 || this.time <= 0.0){
+    if (this.lives === 0 || this.time <= 0.0){
       if (this.score > this.high_score){
         this.high_score = this.score;
       }
@@ -219,10 +242,12 @@ GameState.prototype.render = function(){ //draw the score board
 var logger = new Logger('messages'); //pass in the element to write to
 
 var gamestate = new GameState({
-  'time': 10.0,
+  'time': 60.0, //set the count down timer
   'lives': 3 //set the number of lives you want to use
 });
 
+//add more and modify points if you want to
+//didn't use the scale feature but can be used to modify size of image
 var allEnemies = [
   new Enemy({'sprite':'images/enemy-bug.png', 'scale': 1.0, 'points': -100}),
   new Enemy({'sprite':'images/enemy-bug.png', 'scale': 1.0, 'points': -100}),
@@ -245,27 +270,19 @@ var player = new Player({
   this is where the game behavior is linked together
   done this way so we can add and remove behaviors easily without
   disturbing base objects
+  for more details on implmentation see the Chracter class
 */
 
 //when player notifies on collission tell all enemies to do something
+
+
+
 for (var i = 0; i < allEnemies.length; i++){
-  player.on('check_collision', function(obj,next){
-    var hit = this.isCollision(obj,'circle');
-    if (hit){
-      this.score += obj.points; //do points transfer
-      if (obj instanceof Gem){
-        obj.x = 600;
-        this.notify('gem');
-      }else{
-        this.notify('hit');
-      }
-    }
-  }, allEnemies[i]);
+  //so collisions can be found
+  player.on('check_collision', player.handleCollision, allEnemies[i]); //in a loop so don't create a function
 
   //so player state is propagated
-  player.on('paused', function(obj, next){
-    obj.paused = this.paused;
-  }, allEnemies[i]);
+  player.on('paused', player.handlePaused, allEnemies[i]);
 }
 
 //when player notifies a hit remove a life
@@ -320,12 +337,6 @@ player.on('paused', function(obj, next){
   obj.paused = this.paused;
   if (next) next();
 }, gamestate);
-
-
-
-
-
-
 
 
 logger.log('High Score: ');

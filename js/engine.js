@@ -138,7 +138,8 @@ var Engine = (function(global) {
         }
 
         if (gamestate.paused){
-
+            //added this cool feature to gray out background during rest and pause 
+            //but called before rendering characters
             try {
                 var img = ctx.getImageData(0,0, ctx.canvas.width, ctx.canvas.height);
                 ctx.putImageData(img.grayscale(),0,0);
@@ -150,8 +151,8 @@ var Engine = (function(global) {
     }
 
     /*
-        Add on functionality to make an image gray before putting it on the canvas
-        From the Udacity projects during the Canvas class 
+        Add on functionality to make canvas gray 
+        Developed during the Udacity projects of the Canvas class 
     */
     ImageData.prototype.grayscale = function(){
         var i, r, g, b, ave;
@@ -163,30 +164,13 @@ var Engine = (function(global) {
             b = this.data[i*4+2];
 
             ave = (r+g+b)/3;
-            ave -= 70;
+            ave -= 70; //darken image a bit
             this.data[i*4+0] = ave; 
             this.data[i*4+1] = ave; 
             this.data[i*4+2] = ave; 
         }
         return this;
       };
-
-    ImageData.prototype.invert = function(){
-      var i, r, g, b, ave;
-      var len = this.data.length/4;
-
-      for (i =0; i < len; i++){
-          r = this.data[i*4+0];
-          g = this.data[i*4+1];
-          b = this.data[i*4+2];
-
-          ave = (r+g+b)/3;
-          this.data[i*4+0] = 255 - r; 
-          this.data[i*4+1] = 255 - b; 
-          this.data[i*4+2] = 255 - g; 
-      }
-      return this;
-    };
 
     /* This function is called by the render function and is called on each game
      * tick. It's purpose is to then call the render functions you have defined
