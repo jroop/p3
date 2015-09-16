@@ -296,6 +296,17 @@ player.on('hit', function(obj,next){
   if (next) next(); //shorthand if statement since only one statement
 }, gamestate);
 
+
+player.on('hit', function(obj, next){
+  console.log('You got hit 1');
+  if (next) next();
+}, allEnemies[0]);
+
+player.on('hit', function(obj, next){
+  console.log('You got hit 2');
+  if (next) next();
+}, allEnemies[1]);
+
 //update the score when player captures a gem
 player.on('gem', function(obj, next){
   obj.score = this.score;
@@ -307,7 +318,7 @@ player.on('gem', function(obj, next){
 player.on('goal', function(obj,next){
   this.score += this.points; //reached the goal
   obj.score = this.score; //set the score board same as player points
-  if (next) next();
+  if (next) next(); //call the next function in line
 }, gamestate);
 
 //on game over reset the player points
