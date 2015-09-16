@@ -9,7 +9,7 @@ Thanks for playing and enjoy!
 A paused example:
 ![paused](https://raw.githubusercontent.com/jroop/p3/master/images/paused.png)
 A running example:
-![running](https://raw.githubusercontent.com/jroop/p3/master/images/paused.png)
+![running](https://raw.githubusercontent.com/jroop/p3/master/images/running.png)
 
 ###Game Play
 * Use `enter` key to start game and pause game.
