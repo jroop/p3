@@ -6,9 +6,10 @@ Udacity front-end game that has been enhanced. It sort of resembles a classic fr
 
 Thanks for playing and enjoy!
 
-A paused example:
+####A paused example:
 ![paused](https://raw.githubusercontent.com/jroop/p3/master/images/paused.png)
-A running example:
+
+####A running example:
 ![running](https://raw.githubusercontent.com/jroop/p3/master/images/running.png)
 
 ###Game Play
